@@ -1,526 +1,298 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>时间轴记录应用</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#3B82F6',
-            secondary: '#6366F1',
-            accent: '#8B5CF6',
-            neutral: '#1F2937',
-            'neutral-light': '#F3F4F6',
-          },
-          fontFamily: {
-            inter: ['Inter', 'system-ui', 'sans-serif'],
-          },
-        },
-      }
-    }
-  </script>
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .timeline-line {
-        @apply absolute left-6 top-8 bottom-0 w-0.5 bg-primary/30;
-      }
-      .timeline-dot {
-        @apply absolute left-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white shadow-lg;
-      }
-      .timeline-dot-expired {
-        @apply bg-gray-400;
-      }
-      .timeline-item {
-        @apply mb-8 ml-16 relative;
-      }
-      .timeline-card {
-        @apply bg-white rounded-lg shadow-md p-4 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-      }
-      .timeline-card-expired {
-        @apply bg-gray-50;
-      }
-      .interval-card {
-        @apply bg-blue-50 rounded-lg p-3 text-sm text-gray-700 transform transition-all duration-300 hover:bg-blue-100;
-      }
-      .input-focus {
-        @apply focus:ring-2 focus:ring-primary/50 focus:border-primary;
-      }
-      .btn-hover {
-        @apply hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200;
-      }
-      .animate-fadeIn {
-        animation: fadeIn 0.5s ease-in-out;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>年会幸运大抽奖</title>
+    <style>
+        :root {
+            --primary-color: #e74c3c;
+            --gold-color: #f1c40f;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #fdf2f2;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 顶部标题 */
+        .header {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+            text-align: center;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* 奖池状态区 */
+        .status-container {
+            width: 90%;
+            margin: 20px 0;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            font-size: 14px;
+        }
+
+        .prize-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        /* 主展示区 */
+        .display-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 90%;
+            text-align: center;
+        }
+
+        #result-box {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .prize-level {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .prize-name {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+
+        /* 按钮设计 */
+        .draw-btn {
+            background: linear-gradient(180deg, #ff5e62, #ff9966);
+            color: white;
+            border: none;
+            padding: 15px 60px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 50px;
+            box-shadow: 0 6px 0 #d35400, 0 10px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            margin-bottom: 40px;
+            transition: all 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .draw-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #d35400, 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        .draw-btn:disabled {
+            background: #ccc;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 恭喜中奖动效 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .congrats-content {
+            background: white;
+            width: 80%;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        @keyframes popUp {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px; height: 10px;
+            animation: fall 3s infinite;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(500px) rotate(360deg); opacity: 0; }
+        }
+    </style>
 </head>
-<body class="font-inter bg-gray-50 text-neutral min-h-screen flex flex-col">
-  <!-- 导航栏 -->
-  <nav class="bg-white shadow-sm sticky top-0 z-10">
-    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <i class="fa fa-calendar-check-o text-primary text-2xl"></i>
-        <h1 class="text-xl font-bold text-neutral">时间轴记录</h1>
-      </div>
-      <div class="hidden md:flex items-center space-x-4">
-        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
-          <i class="fa fa-moon-o text-neutral"></i>
-        </button>
-        <button class="bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary/20 transition-colors">
-          <i class="fa fa-question-circle mr-1"></i> 帮助
-        </button>
-      </div>
-      <button class="md:hidden p-2 rounded-full hover:bg-gray-100">
-        <i class="fa fa-bars text-neutral"></i>
-      </button>
-    </div>
-  </nav>
+<body>
 
-  <!-- 主内容区 -->
-  <main class="flex-grow container mx-auto px-4 py-8">
-    <!-- 输入表单 -->
-    <section class="bg-white rounded-xl shadow-md p-6 mb-10 transform transition-all duration-300 hover:shadow-lg">
-      <h2 class="text-2xl font-bold mb-6 flex items-center">
-        <i class="fa fa-plus-circle text-primary mr-2"></i> 添加记录
-      </h2>
-      <form id="record-form" class="space-y-4">
-        <div class="grid md:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label for="date" class="block text-sm font-medium text-gray-700">日期</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fa fa-calendar text-gray-400"></i>
-              </div>
-              <input type="date" id="date" name="date" required
-                class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-primary focus:border-primary"
-                value="2025-07-04">
-            </div>
-          </div>
-          <div class="space-y-2">
-            <label for="description" class="block text-sm font-medium text-gray-700">描述</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fa fa-pencil text-gray-400"></i>
-              </div>
-              <input type="text" id="description" name="description" required
-                class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm input-focus"
-                placeholder="例如：完成需求评审">
-            </div>
-          </div>
+    <div class="header">
+        <h1>🎁 幸运大抽奖</h1>
+    </div>
+
+    <div class="status-container" id="stock-display">
         </div>
-        <div class="flex justify-end">
-          <button type="submit" id="add-record"
-            class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg shadow-sm btn-hover flex items-center">
-            <i class="fa fa-save mr-2"></i> 添加到时间轴
-          </button>
+
+    <div class="display-area">
+        <div id="result-box">
+            <div class="prize-level">期待你的好运</div>
+            <div class="prize-name">准备好了吗？</div>
         </div>
-      </form>
-    </section>
+    </div>
 
-    <!-- 时间轴展示区 -->
-    <section>
-      <h2 class="text-2xl font-bold mb-8 flex items-center">
-        <i class="fa fa-history text-primary mr-2"></i> 时间轴记录
-      </h2>
-      
-      <div class="relative">
-        <!-- 时间轴线条 -->
-        <div class="timeline-line"></div>
-        
-        <!-- 时间轴内容容器 -->
-        <div id="timeline-container" class="space-y-8">
-          <!-- 示例时间轴项目 - 今天 -->
-          <div class="timeline-item animate-fadeIn" data-date="2025-07-04">
-            <div class="timeline-dot">
-              <i class="fa fa-star"></i>
-            </div>
-            <div class="timeline-card">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-bold text-lg text-primary">7月4日</h3>
-                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">今天</span>
-              </div>
-              <p class="text-gray-700">完成需求评审</p>
-              <div class="mt-3 flex justify-end space-x-2">
-                <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="编辑">
-                  <i class="fa fa-pencil"></i>
-                </button>
-                <button class="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="删除">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 时间间隔指示器 -->
-          <div class="timeline-item interval-card animate-fadeIn" style="animation-delay: 0.1s;">
-            <div class="flex items-center">
-              <i class="fa fa-clock-o text-primary mr-2"></i>
-              <div>
-                <p><span class="font-medium">时间间隔：</span>1天（0个工作日）</p>
-                <p><span class="font-medium">周数：</span>0周</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 示例时间轴项目 - 昨天 -->
-          <div class="timeline-item animate-fadeIn" style="animation-delay: 0.2s;" data-date="2025-07-03">
-            <div class="timeline-dot timeline-dot-expired">
-              <i class="fa fa-clock-o"></i>
-            </div>
-            <div class="timeline-card timeline-card-expired">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-bold text-lg text-gray-500">7月3日</h3>
-                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">昨天</span>
-              </div>
-              <p class="text-gray-500">准备项目文档</p>
-              <div class="mt-3 flex justify-end space-x-2">
-                <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="编辑">
-                  <i class="fa fa-pencil"></i>
-                </button>
-                <button class="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="删除">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 时间间隔指示器 -->
-          <div class="timeline-item interval-card animate-fadeIn" style="animation-delay: 0.3s;">
-            <div class="flex items-center">
-              <i class="fa fa-clock-o text-primary mr-2"></i>
-              <div>
-                <p><span class="font-medium">时间间隔：</span>2天（2个工作日）</p>
-                <p><span class="font-medium">周数：</span>0周</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 示例时间轴项目 - 7月1日 -->
-          <div class="timeline-item animate-fadeIn" style="animation-delay: 0.4s;" data-date="2025-07-01">
-            <div class="timeline-dot timeline-dot-expired">
-              <i class="fa fa-file-text-o"></i>
-            </div>
-            <div class="timeline-card timeline-card-expired">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-bold text-lg text-gray-500">7月1日</h3>
-                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">3天前</span>
-              </div>
-              <p class="text-gray-500">项目启动会议</p>
-              <div class="mt-3 flex justify-end space-x-2">
-                <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="编辑">
-                  <i class="fa fa-pencil"></i>
-                </button>
-                <button class="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="删除">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
+    <button class="draw-btn" id="drawBtn" onclick="draw()">立即抽奖</button>
+
+    <div class="modal" id="modal" onclick="closeModal()">
+        <div class="congrats-content">
+            <h2 style="color: var(--primary-color);">恭喜中奖！🎉</h2>
+            <div id="modal-result" style="font-size: 1.5rem; margin: 20px 0;"></div>
+            <button style="padding: 10px 20px; border: none; background: #eee; border-radius: 5px;">点击关闭</button>
         </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- 页脚 -->
-  <footer class="bg-white border-t border-gray-200 py-6">
-    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-      <p>© 2025 时间轴记录应用 | 使用现代技术构建</p>
-      <div class="mt-3 flex justify-center space-x-4">
-        <a href="#" class="hover:text-primary transition-colors">
-          <i class="fa fa-github"></i>
-        </a>
-        <a href="#" class="hover:text-primary transition-colors">
-          <i class="fa fa-twitter"></i>
-        </a>
-        <a href="#" class="hover:text-primary transition-colors">
-          <i class="fa fa-linkedin"></i>
-        </a>
-      </div>
     </div>
-  </footer>
 
-  <!-- 通知组件 -->
-  <div id="notification" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center z-50 max-w-xs">
-    <div id="notification-icon" class="mr-3 text-green-500">
-      <i class="fa fa-check-circle text-xl"></i>
-    </div>
-    <div>
-      <h4 id="notification-title" class="font-medium text-gray-800">成功</h4>
-      <p id="notification-message" class="text-sm text-gray-600">记录已添加到时间轴</p>
-    </div>
-    <button id="close-notification" class="ml-4 text-gray-400 hover:text-gray-600">
-      <i class="fa fa-times"></i>
-    </button>
-  </div>
+    <script>
+        // 1. 初始化奖池数据
+        let prizePool = [
+            { id: 1, level: '特等奖', name: '加湿器', total: 2, current: 2 },
+            { id: 2, level: '一等奖', name: '鼠标', total: 6, current: 6 },
+            { id: 3, level: '二等奖', name: '电子秤', total: 5, current: 5 },
+            { id: 4, level: '三等奖', name: '热水壶', total: 10, current: 10 },
+            { id: 5, level: '阳光普照', name: '哑铃', total: 8, current: 8 },
+            { id: 6, level: '阳光普照', name: '蒸蛋器', total: 7, current: 7 }
+        ];
 
-  <script>
-    // 日期格式化工具函数
-    function formatDate(dateString) {
-      const date = new Date(dateString);
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      return `${month}月${day}日`;
-    }
-    
-    // 获取今天的日期字符串 (YYYY-MM-DD)
-    function getToday() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    
-    // 获取日期差异描述
-    function getDateDifference(dateString) {
-      const targetDate = new Date(dateString);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const timeDiff = today - targetDate;
-      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff === 0) return "今天";
-      if (daysDiff === 1) return "昨天";
-      if (daysDiff > 1) return `${daysDiff}天前`;
-      if (daysDiff === -1) return "明天";
-      if (daysDiff < -1) return `${Math.abs(daysDiff)}天后`;
-      
-      return "";
-    }
-    
-    // 检查日期是否过期（早于今天）
-    function isDateExpired(dateString) {
-      const targetDate = new Date(dateString);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      return targetDate < today;
-    }
-    
-    // 计算两个日期之间的工作日数量（排除周六和周日）
-    function countWeekdays(startDateString, endDateString) {
-      let startDate = new Date(startDateString);
-      let endDate = new Date(endDateString);
-      
-      // 确保开始日期早于结束日期
-      if (startDate > endDate) {
-        [startDate, endDate] = [endDate, startDate];
-      }
-      
-      let count = 0;
-      const currentDate = new Date(startDate);
-      
-      while (currentDate <= endDate) {
-        const dayOfWeek = currentDate.getDay();
-        // 0是周日，6是周六，都排除
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-          count++;
+        // 2. 更新库存显示
+        function updateStockDisplay() {
+            const container = document.getElementById('stock-display');
+            let html = '<strong>奖池余量：</strong>';
+            let allEmpty = true;
+            
+            prizePool.forEach(p => {
+                if(p.current > 0) allEmpty = false;
+                html += `
+                    <div class="prize-item">
+                        <span>${p.level}-${p.name}</span>
+                        <span><b>${p.current}</b> / ${p.total}</span>
+                    </div>`;
+            });
+
+            if(allEmpty) {
+                document.getElementById('drawBtn').disabled = true;
+                document.getElementById('drawBtn').innerText = '奖品已抽完';
+            }
+            container.innerHTML = html;
         }
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      // 减去1，因为不包含开始日期本身
-      return Math.max(0, count - 1);
-    }
-    
-    // 计算两个日期之间的总天数
-    function getDayDifference(startDateString, endDateString) {
-      const startDate = new Date(startDateString);
-      const endDate = new Date(endDateString);
-      
-      // 确保两个日期都在同一天的开始
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
-      
-      const timeDiff = Math.abs(endDate - startDate);
-      return Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    }
-    
-    // 计算两个日期之间的周数
-    function getWeekDifference(startDateString, endDateString) {
-      const days = getDayDifference(startDateString, endDateString);
-      return Math.floor(days / 7);
-    }
-    
-    // 创建时间间隔指示器
-    function createIntervalCard(date1, date2) {
-      const days = getDayDifference(date1, date2);
-      const weekdays = countWeekdays(date1, date2);
-      const weeks = getWeekDifference(date1, date2);
-      
-      const intervalCard = document.createElement('div');
-      intervalCard.className = 'timeline-item interval-card animate-fadeIn';
-      intervalCard.setAttribute('data-start', date1);
-      intervalCard.setAttribute('data-end', date2);
-      
-      intervalCard.innerHTML = `
-        <div class="flex items-center">
-          <i class="fa fa-clock-o text-primary mr-2"></i>
-          <div>
-            <p><span class="font-medium">时间间隔：</span>${days}天（${weekdays}个工作日）</p>
-            <p><span class="font-medium">周数：</span>${weeks}周</p>
-          </div>
-        </div>
-      `;
-      
-      return intervalCard;
-    }
-    
-    // 显示通知
-    function showNotification(title, message, isSuccess = true) {
-      const notification = document.getElementById('notification');
-      const notificationTitle = document.getElementById('notification-title');
-      const notificationMessage = document.getElementById('notification-message');
-      const notificationIcon = document.getElementById('notification-icon');
-      
-      notificationTitle.textContent = title;
-      notificationMessage.textContent = message;
-      
-      // 设置图标和颜色
-      if (isSuccess) {
-        notificationIcon.innerHTML = '<i class="fa fa-check-circle text-xl text-green-500"></i>';
-      } else {
-        notificationIcon.innerHTML = '<i class="fa fa-exclamation-circle text-xl text-red-500"></i>';
-      }
-      
-      // 显示通知
-      notification.classList.remove('translate-y-20', 'opacity-0');
-      notification.classList.add('translate-y-0', 'opacity-100');
-      
-      // 3秒后自动关闭
-      setTimeout(hideNotification, 3000);
-    }
-    
-    // 隐藏通知
-    function hideNotification() {
-      const notification = document.getElementById('notification');
-      notification.classList.remove('translate-y-0', 'opacity-100');
-      notification.classList.add('translate-y-20', 'opacity-0');
-    }
-    
-    // 添加记录到时间轴
-    function addRecordToTimeline(date, description) {
-      const timelineContainer = document.getElementById('timeline-container');
-      const formattedDate = formatDate(date);
-      const dateDifference = getDateDifference(date);
-      const isExpired = isDateExpired(date);
-      
-      // 获取当前第一个时间轴项目的日期
-      const firstItem = timelineContainer.querySelector('.timeline-item[data-date]');
-      let firstItemDate = null;
-      
-      if (firstItem) {
-        firstItemDate = firstItem.getAttribute('data-date');
-      }
-      
-      // 创建新的时间轴项目
-      const timelineItem = document.createElement('div');
-      timelineItem.className = `timeline-item animate-fadeIn ${isExpired ? 'timeline-item-expired' : ''}`;
-      timelineItem.setAttribute('data-date', date);
-      
-      timelineItem.innerHTML = `
-        <div class="timeline-dot ${isExpired ? 'timeline-dot-expired' : ''}">
-          <i class="fa fa-plus"></i>
-        </div>
-        <div class="timeline-card ${isExpired ? 'timeline-card-expired' : ''}">
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="font-bold text-lg ${isExpired ? 'text-gray-500' : 'text-primary'}">${formattedDate}</h3>
-            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">${dateDifference}</span>
-          </div>
-          <p class="text-${isExpired ? 'gray-500' : 'gray-700'}">${description}</p>
-          <div class="mt-3 flex justify-end space-x-2">
-            <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="编辑">
-              <i class="fa fa-pencil"></i>
-            </button>
-            <button class="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="删除">
-              <i class="fa fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      `;
-      
-      // 添加到容器顶部
-      timelineContainer.insertBefore(timelineItem, timelineContainer.firstChild);
-      
-      // 如果有后续项目，添加时间间隔指示器
-      if (firstItemDate) {
-        const intervalCard = createIntervalCard(date, firstItemDate);
-        timelineContainer.insertBefore(intervalCard, timelineContainer.children[1]);
-      }
-      
-      // 添加删除功能
-      const deleteButton = timelineItem.querySelector('.fa-trash').parentElement;
-      deleteButton.addEventListener('click', function() {
-        // 找到相邻的间隔卡片
-        const nextElement = timelineItem.nextElementSibling;
-        if (nextElement && nextElement.classList.contains('interval-card')) {
-          // 添加删除动画
-          nextElement.classList.add('opacity-0', 'translate-y-4');
-          nextElement.style.transition = 'opacity 0.3s, transform 0.3s';
-          
-          // 动画结束后移除元素
-          setTimeout(() => {
-            nextElement.remove();
-          }, 300);
+
+        // 3. 抽奖逻辑
+        function draw() {
+            // 构建随机数组（仅包含有库存的）
+            let lotteryList = [];
+            prizePool.forEach((p, index) => {
+                for(let i = 0; i < p.current; i++) {
+                    lotteryList.push(index);
+                }
+            });
+
+            if(lotteryList.length === 0) return;
+
+            // 简单的随机选取
+            const randomIndex = Math.floor(Math.random() * lotteryList.length);
+            const prizeIndex = lotteryList[randomIndex];
+            const winner = prizePool[prizeIndex];
+
+            // 扣减库存
+            winner.current--;
+
+            // 执行动效展示
+            showResult(winner);
         }
-        
-        // 添加删除动画
-        timelineItem.classList.add('opacity-0', 'translate-y-4');
-        timelineItem.style.transition = 'opacity 0.3s, transform 0.3s';
-        
-        // 动画结束后移除元素
-        setTimeout(() => {
-          timelineItem.remove();
-          showNotification("已删除", "记录已从时间轴中移除");
-        }, 300);
-      });
-      
-      // 添加编辑功能
-      const editButton = timelineItem.querySelector('.fa-pencil').parentElement;
-      editButton.addEventListener('click', function() {
-        const card = timelineItem.querySelector('.timeline-card');
-        const descriptionElement = card.querySelector('p');
-        const originalDescription = descriptionElement.textContent;
-        
-        // 创建编辑输入框
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = originalDescription;
-        input.className = 'w-full rounded-lg border-gray-300 shadow-sm input-focus p-1';
-        
-        // 替换描述文本为输入框
-        descriptionElement.replaceWith(input);
-        
-        // 创建保存和取消按钮
-        const actionButtons = document.createElement('div');
-        actionButtons.className = 'mt-2 flex justify-end space-x-2';
-        actionButtons.innerHTML = `
-          <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="取消">
-            <i class="fa fa-times"></i>
-          </button>
-          <button class="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors" title="保存">
-            <i class="fa fa-check"></i>
-          </button>
-        `;
-        
-        // 添加到卡片
-        card.appendChild(actionButtons);
-        
-        // 取消编辑
-        const cancelButton = actionButtons.querySelector('.fa-times').parentElement;
-        cancelButton.addEventListener('click', function() {
-          // 恢复原始描述
-          input.replaceWith(descriptionElement);
+
+        // 4. 展示结果与动效
+        function showResult(prize) {
+            const btn = document.getElementById('drawBtn');
+            btn.disabled = true;
+
+            // 模拟抽奖滚动效果
+            let count = 0;
+            const interval = setInterval(() => {
+                const tempPrize = prizePool[Math.floor(Math.random() * prizePool.length)];
+                document.getElementById('result-box').innerHTML = `
+                    <div class="prize-level">正在开奖...</div>
+                    <div class="prize-name">${tempPrize.name}</div>
+                `;
+                count++;
+                if(count > 10) {
+                    clearInterval(interval);
+                    finalizeResult(prize);
+                }
+            }, 100);
+        }
+
+        function finalizeResult(prize) {
+            // 更新页面文字
+            document.getElementById('result-box').innerHTML = `
+                <div class="prize-level">${prize.level}</div>
+                <div class="prize-name">${prize.name}</div>
+            `;
+            
+            // 弹出恭喜窗口
+            document.getElementById('modal-result').innerHTML = `
+                <div style="color: #666; font-size: 1rem;">${prize.level}</div>
+                <div style="font-weight: bold; color: #e74c3c; margin-top:5px;">${prize.name}</div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+            
+            // 创建彩纸屑
+            createConfetti();
+
+            // 更新库存
+            updateStockDisplay();
+            document.getElementById('drawBtn').disabled = false;
+        }
+
+        // 5. 辅助功能：彩纸屑动效
+        function createConfetti() {
+            const modal = document.getElementById('modal');
+            for(let i=0; i<30; i++) {
+                const div = document.createElement('div');
+                div.className = 'confetti';
+                div.style.left = Math.random() * 100 + '%';
+                div.style.top = '-10px';
+                div.style.backgroundColor = ['#f1c40f','#e74c3c','#3498db','#2ecc71'][Math.floor(Math.random()*4)];
+                div.style.transform = `rotate(${Math.random()*360}deg)`;
+                modal.appendChild(div);
+                setTimeout(() => div.remove(), 3000);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // 初始化
+        updateStockDisplay();
+    </script>
+</body>
+</html>
