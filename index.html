@@ -3,287 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>年会幸运大抽奖</title>
+    <title>2026 年会幸运抽奖 - 专业版</title>
     <style>
         :root {
             --primary-color: #e74c3c;
-            --gold-color: #f1c40f;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --bg-color: #f8f9fa;
         }
 
         body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: #fdf2f2;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            color: #333;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* 顶部标题 */
+        /* 顶部装饰 */
         .header {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
             width: 100%;
+            padding: 30px 0 50px;
             text-align: center;
-            padding: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
         }
 
-        /* 奖池状态区 */
-        .status-container {
-            width: 90%;
-            margin: 20px 0;
+        .header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
+        .header p { margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem; }
+
+        /* 重置按钮 - 放在右上角，防止误触 */
+        .btn-reset {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        /* 可视化奖池区 */
+        .dashboard {
+            width: 92%;
+            margin-top: -30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding-bottom: 20px;
+        }
+
+        .prize-card {
             background: white;
             padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            font-size: 14px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: relative;
         }
 
-        .prize-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dashed #eee;
+        .prize-card.out-of-stock {
+            filter: grayscale(1);
+            opacity: 0.6;
         }
 
-        /* 主展示区 */
-        .display-area {
+        .card-level {
+            font-size: 0.7rem;
+            color: #95a5a6;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .card-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .progress-container {
+            height: 6px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .low-stock .progress-bar {
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+        }
+
+        .stock-num {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-align: right;
+            display: block;
+        }
+
+        /* 核心展示区 */
+        .display-section {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            width: 90%;
-            text-align: center;
+            width: 100%;
+            padding: 20px 0;
         }
 
-        #result-box {
-            min-height: 120px;
+        #result-display {
+            text-align: center;
+            height: 120px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            transition: all 0.3s;
         }
 
-        .prize-level {
-            font-size: 1.2rem;
-            color: #666;
-        }
-
-        .prize-name {
+        .rolling-text {
             font-size: 2.2rem;
-            font-weight: bold;
+            font-weight: 900;
             color: var(--primary-color);
-            margin-top: 10px;
+            text-shadow: 0 2px 10px rgba(231, 76, 60, 0.2);
         }
 
-        /* 按钮设计 */
-        .draw-btn {
-            background: linear-gradient(180deg, #ff5e62, #ff9966);
+        /* 按钮 */
+        .btn-draw {
+            background: linear-gradient(180deg, #ff5e62, #e74c3c);
             color: white;
             border: none;
-            padding: 15px 60px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
             font-size: 1.5rem;
             font-weight: bold;
-            border-radius: 50px;
-            box-shadow: 0 6px 0 #d35400, 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 0 #a93226, 0 15px 25px rgba(231, 76, 60, 0.3);
             cursor: pointer;
             margin-bottom: 40px;
             transition: all 0.1s;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .draw-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #d35400, 0 5px 10px rgba(0,0,0,0.2);
+        .btn-draw:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #a93226, 0 5px 10px rgba(231, 76, 60, 0.3);
         }
 
-        .draw-btn:disabled {
-            background: #ccc;
+        .btn-draw:disabled {
+            background: #bdc3c7;
             box-shadow: none;
             transform: none;
+            color: #ecf0f1;
         }
 
-        /* 恭喜中奖动效 */
+        /* 中奖弹窗 */
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 100;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(5px);
         }
 
-        .congrats-content {
+        .modal-content {
             background: white;
             width: 80%;
-            padding: 30px;
-            border-radius: 20px;
+            padding: 40px 20px;
+            border-radius: 25px;
             text-align: center;
-            animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
-        @keyframes popUp {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .confetti {
             position: absolute;
-            width: 10px; height: 10px;
-            animation: fall 3s infinite;
+            width: 8px; height: 8px;
+            top: -10px;
+            animation: fall 3s linear forwards;
         }
 
         @keyframes fall {
-            to { transform: translateY(500px) rotate(360deg); opacity: 0; }
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>🎁 幸运大抽奖</h1>
+        <h1>LUCKY DRAW</h1>
+        <p>— 2026 幸运大抽奖 —</p>
+        <button class="btn-reset" onclick="resetPool()">重置奖池</button>
     </div>
 
-    <div class="status-container" id="stock-display">
-        </div>
+    <div class="dashboard" id="dashboard"></div>
 
-    <div class="display-area">
-        <div id="result-box">
-            <div class="prize-level">期待你的好运</div>
-            <div class="prize-name">准备好了吗？</div>
+    <div class="display-section">
+        <div id="result-display">
+            <span class="rolling-text" style="color:#bdc3c7">GOOD LUCK!</span>
         </div>
     </div>
 
-    <button class="draw-btn" id="drawBtn" onclick="draw()">立即抽奖</button>
+    <button class="btn-draw" id="drawBtn" onclick="startDraw()">抽奖</button>
 
     <div class="modal" id="modal" onclick="closeModal()">
-        <div class="congrats-content">
-            <h2 style="color: var(--primary-color);">恭喜中奖！🎉</h2>
-            <div id="modal-result" style="font-size: 1.5rem; margin: 20px 0;"></div>
-            <button style="padding: 10px 20px; border: none; background: #eee; border-radius: 5px;">点击关闭</button>
+        <div class="modal-content">
+            <h2 style="color: #f1c40f; margin:0">CONGRATS! 🎉</h2>
+            <p style="color: #666; margin: 10px 0 0;">恭喜您获得</p>
+            <div id="modal-prize-level" style="font-size: 1rem; color: #999; margin-top: 20px;"></div>
+            <div id="modal-prize-name" style="font-size: 2.2rem; font-weight: 800; color: #e74c3c;"></div>
+            <button style="margin-top: 30px; border: none; background: #f8f9fa; padding: 10px 30px; border-radius: 20px; color: #999;">点击关闭</button>
         </div>
     </div>
 
     <script>
-        // 1. 初始化奖池数据
-        let prizePool = [
-            { id: 1, level: '特等奖', name: '加湿器', total: 2, current: 2 },
-            { id: 2, level: '一等奖', name: '鼠标', total: 6, current: 6 },
-            { id: 3, level: '二等奖', name: '电子秤', total: 5, current: 5 },
-            { id: 4, level: '三等奖', name: '热水壶', total: 10, current: 10 },
-            { id: 5, level: '阳光普照', name: '哑铃', total: 8, current: 8 },
-            { id: 6, level: '阳光普照', name: '蒸蛋器', total: 7, current: 7 }
+        // 初始奖池配置
+        const INITIAL_DATA = [
+            { id: 0, level: '特等奖', name: '加湿器', total: 2, current: 2 },
+            { id: 1, level: '一等奖', name: '鼠标', total: 6, current: 6 },
+            { id: 2, level: '二等奖', name: '电子秤', total: 5, current: 5 },
+            { id: 3, level: '三等奖', name: '热水壶', total: 10, current: 10 },
+            { id: 4, level: '阳光普照', name: '哑铃', total: 8, current: 8 },
+            { id: 5, level: '阳光普照', name: '蒸蛋器', total: 7, current: 7 }
         ];
 
-        // 2. 更新库存显示
-        function updateStockDisplay() {
-            const container = document.getElementById('stock-display');
-            let html = '<strong>奖池余量：</strong>';
-            let allEmpty = true;
-            
-            prizePool.forEach(p => {
-                if(p.current > 0) allEmpty = false;
-                html += `
-                    <div class="prize-item">
-                        <span>${p.level}-${p.name}</span>
-                        <span><b>${p.current}</b> / ${p.total}</span>
-                    </div>`;
-            });
+        let prizePool = [];
 
-            if(allEmpty) {
-                document.getElementById('drawBtn').disabled = true;
-                document.getElementById('drawBtn').innerText = '奖品已抽完';
+        // 核心：初始化数据（从存储中读取或使用初始值）
+        function initData() {
+            const savedData = localStorage.getItem('annual_draw_2026_pool');
+            if (savedData) {
+                prizePool = JSON.parse(savedData);
+            } else {
+                prizePool = JSON.parse(JSON.stringify(INITIAL_DATA));
+                saveData();
             }
-            container.innerHTML = html;
+            updateDashboard();
         }
 
-        // 3. 抽奖逻辑
-        function draw() {
-            // 构建随机数组（仅包含有库存的）
-            let lotteryList = [];
-            prizePool.forEach((p, index) => {
-                for(let i = 0; i < p.current; i++) {
-                    lotteryList.push(index);
-                }
+        // 保存当前状态到 localStorage
+        function saveData() {
+            localStorage.setItem('annual_draw_2026_pool', JSON.stringify(prizePool));
+        }
+
+        // 重置奖池
+        function resetPool() {
+            if(confirm('确定要重置所有奖池数据吗？当前的中奖记录将会丢失！')) {
+                localStorage.removeItem('annual_draw_2026_pool');
+                prizePool = JSON.parse(JSON.stringify(INITIAL_DATA));
+                saveData();
+                updateDashboard();
+                document.getElementById('drawBtn').disabled = false;
+                document.getElementById('drawBtn').innerText = "抽奖";
+                alert('奖池已恢复初始状态');
+            }
+        }
+
+        function updateDashboard() {
+            const container = document.getElementById('dashboard');
+            container.innerHTML = '';
+            let allSoldOut = true;
+
+            prizePool.forEach(p => {
+                const percent = (p.current / p.total) * 100;
+                const isLow = p.current > 0 && p.current <= (p.total * 0.2);
+                const isEmpty = p.current === 0;
+                
+                if(!isEmpty) allSoldOut = false;
+
+                const card = document.createElement('div');
+                card.className = `prize-card ${isLow ? 'low-stock' : ''} ${isEmpty ? 'out-of-stock' : ''}`;
+                card.innerHTML = `
+                    <span class="card-level">${p.level}</span>
+                    <span class="card-name">${p.name}</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="stock-num">${p.current} / ${p.total}</span>
+                `;
+                container.appendChild(card);
             });
 
-            if(lotteryList.length === 0) return;
-
-            // 简单的随机选取
-            const randomIndex = Math.floor(Math.random() * lotteryList.length);
-            const prizeIndex = lotteryList[randomIndex];
-            const winner = prizePool[prizeIndex];
-
-            // 扣减库存
-            winner.current--;
-
-            // 执行动效展示
-            showResult(winner);
+            if(allSoldOut) {
+                const btn = document.getElementById('drawBtn');
+                btn.disabled = true;
+                btn.innerText = "已抽完";
+            }
         }
 
-        // 4. 展示结果与动效
-        function showResult(prize) {
+        function startDraw() {
             const btn = document.getElementById('drawBtn');
+            const display = document.getElementById('result-display');
+            
+            let pool = [];
+            prizePool.forEach((p, idx) => {
+                for(let i=0; i<p.current; i++) pool.push(idx);
+            });
+
+            if(pool.length === 0) return;
+
             btn.disabled = true;
 
-            // 模拟抽奖滚动效果
-            let count = 0;
-            const interval = setInterval(() => {
-                const tempPrize = prizePool[Math.floor(Math.random() * prizePool.length)];
-                document.getElementById('result-box').innerHTML = `
-                    <div class="prize-level">正在开奖...</div>
-                    <div class="prize-name">${tempPrize.name}</div>
-                `;
-                count++;
-                if(count > 10) {
-                    clearInterval(interval);
-                    finalizeResult(prize);
+            let timer = 0;
+            const rolling = setInterval(() => {
+                const randomName = prizePool[Math.floor(Math.random()*prizePool.length)].name;
+                display.innerHTML = `<span class="rolling-text">${randomName}</span>`;
+                timer++;
+                
+                if(timer > 15) {
+                    clearInterval(rolling);
+                    const winIndex = pool[Math.floor(Math.random() * pool.length)];
+                    executeWin(prizePool[winIndex]);
                 }
-            }, 100);
+            }, 60);
         }
 
-        function finalizeResult(prize) {
-            // 更新页面文字
-            document.getElementById('result-box').innerHTML = `
-                <div class="prize-level">${prize.level}</div>
-                <div class="prize-name">${prize.name}</div>
-            `;
+        function executeWin(prize) {
+            prize.current--;
+            saveData(); // 中奖后立即保存到本地存储
             
-            // 弹出恭喜窗口
-            document.getElementById('modal-result').innerHTML = `
-                <div style="color: #666; font-size: 1rem;">${prize.level}</div>
-                <div style="font-weight: bold; color: #e74c3c; margin-top:5px;">${prize.name}</div>
+            const display = document.getElementById('result-display');
+            display.innerHTML = `
+                <div style="font-size:1rem; color:#666">${prize.level}</div>
+                <div class="rolling-text">${prize.name}</div>
             `;
-            document.getElementById('modal').style.display = 'flex';
-            
-            // 创建彩纸屑
-            createConfetti();
 
-            // 更新库存
-            updateStockDisplay();
+            document.getElementById('modal-prize-level').innerText = prize.level;
+            document.getElementById('modal-prize-name').innerText = prize.name;
+            document.getElementById('modal').style.display = 'flex';
+
+            createConfetti();
+            updateDashboard();
             document.getElementById('drawBtn').disabled = false;
         }
 
-        // 5. 辅助功能：彩纸屑动效
         function createConfetti() {
-            const modal = document.getElementById('modal');
-            for(let i=0; i<30; i++) {
-                const div = document.createElement('div');
-                div.className = 'confetti';
-                div.style.left = Math.random() * 100 + '%';
-                div.style.top = '-10px';
-                div.style.backgroundColor = ['#f1c40f','#e74c3c','#3498db','#2ecc71'][Math.floor(Math.random()*4)];
-                div.style.transform = `rotate(${Math.random()*360}deg)`;
-                modal.appendChild(div);
-                setTimeout(() => div.remove(), 3000);
+            for(let i=0; i<50; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + '%';
+                c.style.backgroundColor = ['#f1c40f','#e74c3c','#3498db','#2ecc71','#9b59b6'][Math.floor(Math.random()*5)];
+                c.style.width = Math.random() * 8 + 4 + 'px';
+                c.style.height = c.style.width;
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 3000);
             }
         }
 
@@ -292,7 +384,7 @@
         }
 
         // 初始化
-        updateStockDisplay();
+        window.onload = initData;
     </script>
 </body>
 </html>
