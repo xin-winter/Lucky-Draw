@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: -apple-system, "PingFang SC", sans-serif;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
             background: #fdf2f2;
             margin: 0; padding: 15px;
             color: var(--dark);
@@ -58,17 +58,16 @@
             box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
         }
 
-        /* 结果展示 */
         .result-table { width: 100%; border-collapse: collapse; }
         .result-table th { text-align: left; padding: 12px 8px; color: #999; font-size: 0.8rem; border-bottom: 2px solid var(--grey); }
         .result-table td { padding: 14px 8px; border-bottom: 1px solid #f9f9f9; }
 
         .tag { padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
-        .tag-1 { background: #721c24; color: #fff; } /* 特等 */
-        .tag-2 { background: #fff3cd; color: #856404; } /* 一等 */
-        .tag-3 { background: #d1ecf1; color: #0c5460; } /* 二等 */
-        .tag-4 { background: #d4edda; color: #155724; } /* 三等 */
-        .tag-5 { background: #e2e3e5; color: #383d41; } /* 阳光 */
+        .tag-1 { background: #721c24; color: #fff; } 
+        .tag-2 { background: #fff3cd; color: #856404; } 
+        .tag-3 { background: #d1ecf1; color: #0c5460; } 
+        .tag-4 { background: #d4edda; color: #155724; } 
+        .tag-5 { background: #e2e3e5; color: #383d41; } 
 
         .winner-name { font-weight: bold; }
         .hidden { display: none; }
@@ -83,8 +82,8 @@
 
     <div id="setup-view">
         <div class="card">
-            <label>👤 全体成员 (37人)</label>
-            <textarea id="all-members" style="height: 120px;">吕晨曦
+            <label>👤 全体成员名单 (已更新至 37人)</label>
+            <textarea id="all-members" style="height: 180px;">吕晨曦
 王博
 张志峰
 李智
@@ -119,37 +118,38 @@
 卫亚鑫
 黄铮
 贾思琪
-杨翠宇</textarea>
+杨翠宇
+刘小男</textarea>
             
-            <label>🌟 羽毛球比赛特等奖名单 (6人)</label>
+            <label>🌟 指定特等奖名单 (6人)</label>
             <textarea id="special-members" style="height: 110px;">刘小男
 杜舒惠
 王延猛
 朴永强
 冯树权
 陈杰</textarea>
-            <p class="hint">系统逻辑：以上 6 人为羽毛球比赛的特等奖选手，不参与剩余奖项随机抽取。</p>
+            <p class="hint">逻辑：以上 6 人必得特等奖，其余 31 人随机瓜分剩下的奖项。</p>
 
-            <button onclick="generateAndSort()">一键全自动分配</button>
+            <button onclick="generateAndSort()">一键全自动抽奖</button>
         </div>
     </div>
 
     <div id="result-view" class="hidden">
         <div class="card">
-            <h3 style="text-align: center; color: var(--red);">🎉 最终获奖公示</h3>
+            <h3 style="text-align: center; color: var(--red);">🎉 获奖公示结果</h3>
             <table class="result-table">
                 <thead>
                     <tr>
                         <th>获奖者</th>
-                        <th>奖项</th>
-                        <th>奖品</th>
+                        <th>奖项等级</th>
+                        <th>奖品内容</th>
                     </tr>
                 </thead>
                 <tbody id="result-body"></tbody>
             </table>
         </div>
         <div class="footer-action">
-            <button class="btn-secondary" onclick="goBack()">返回调整</button>
+            <button class="btn-secondary" onclick="goBack()">返回修改</button>
             <button onclick="window.print()">保存/截图结果</button>
         </div>
     </div>
@@ -168,46 +168,55 @@
         const allList = document.getElementById('all-members').value.split('\n').map(n => n.trim()).filter(n => n);
         const specList = document.getElementById('special-members').value.split('\n').map(n => n.trim()).filter(n => n);
 
-        // 1. 过滤掉指定人员
+        // 1. 过滤掉指定人员，得到随机池
         const randomPool = allList.filter(name => !specList.includes(name));
 
-        // 2. 准备剩余奖品池 (特等奖剩下 8-6=2 个)
+        // 2. 准备奖品池 (特等奖剩下 8-6=2 个)
         let prizeItems = [];
         for(let i=0; i<2; i++) prizeItems.push({ level: '特等奖', name: '加湿器' });
         for(let i=0; i<6; i++) prizeItems.push({ level: '一等奖', name: '鼠标' });
         for(let i=0; i<5; i++) prizeItems.push({ level: '二等奖', name: '电子秤' });
         for(let i=0; i<10; i++) prizeItems.push({ level: '三等奖', name: '热水壶' });
         
+        // 阳光普照奖（剩下的人全部获得，并随机分配两种奖品）
+        let sunshineCount = randomPool.length - prizeItems.length;
         let luckyPrizes = [];
-        for(let i=0; i<8; i++) luckyPrizes.push('哑铃');
-        for(let i=0; i<7; i++) luckyPrizes.push('蒸蛋器');
-        shuffle(luckyPrizes);
+        for(let i=0; i<sunshineCount; i++) {
+            luckyPrizes.push(Math.random() > 0.5 ? '哑铃' : '蒸蛋器');
+        }
         luckyPrizes.forEach(p => prizeItems.push({ level: '阳光普照', name: p }));
 
-        // 3. 洗牌
+        // 3. 洗牌随机池和随机奖项
         shuffle(randomPool);
         shuffle(prizeItems);
 
         // 4. 分配
         let results = [];
+        // A. 先放指定的人
         specList.forEach(name => results.push({ name, level: '特等奖', prize: '加湿器' }));
+        // B. 分配随机池
         randomPool.forEach((name, i) => {
-            const p = prizeItems[i] || { level: '阳光普照', name: '惊喜小礼物' };
+            const p = prizeItems[i] || { level: '阳光普照', name: '精美礼品' };
             results.push({ name, level: p.level, prize: p.name });
         });
 
-        // 5. 排序渲染
+        // 5. 按等级排序
         results.sort((a, b) => PRIZE_DEFS[a.level].weight - PRIZE_DEFS[b.level].weight);
 
         const tbody = document.getElementById('result-body');
         tbody.innerHTML = '';
         results.forEach(item => {
             const w = PRIZE_DEFS[item.level].weight;
-            tbody.innerHTML += `<tr><td class="winner-name">${item.name}</td><td><span class="tag tag-${w}">${item.level}</span></td><td style="color:#666;font-size:0.9rem">${item.prize}</td></tr>`;
+            tbody.innerHTML += `<tr>
+                <td class="winner-name">${item.name}</td>
+                <td><span class="tag tag-${w}">${item.level}</span></td>
+                <td style="color:#666;font-size:0.9rem">${item.prize}</td>
+            </tr>`;
         });
 
         document.getElementById('setup-view').classList.add('hidden');
         document.getElementById('result-view').classList.remove('hidden');
+        window.scrollTo(0,0);
     }
 
     function shuffle(arr) {
