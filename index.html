@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 年会奖品分配系统 - 排序优化版</title>
+    <title>2026 年会抽奖最终版</title>
     <style>
         :root {
             --red: #e74c3c;
@@ -34,20 +34,21 @@
         
         textarea {
             width: 100%;
-            height: 120px;
             border: 1.5px solid #eee;
             border-radius: 12px;
             padding: 12px;
             box-sizing: border-box;
-            font-size: 15px;
+            font-size: 14px;
+            line-height: 1.5;
             margin-bottom: 15px;
             transition: border-color 0.3s;
             outline: none;
+            background-color: #fafafa;
         }
 
-        textarea:focus { border-color: var(--red); }
+        textarea:focus { border-color: var(--red); background-color: #fff; }
 
-        .hint { font-size: 0.8rem; color: #999; margin-top: -10px; margin-bottom: 15px; line-height: 1.4; }
+        .hint { font-size: 0.8rem; color: #999; margin-top: -10px; margin-bottom: 15px; }
 
         button {
             width: 100%; padding: 16px;
@@ -55,183 +56,155 @@
             color: white; border: none; border-radius: 30px;
             font-size: 1.1rem; font-weight: bold; cursor: pointer;
             box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
-            transition: 0.2s;
         }
 
-        button:active { transform: scale(0.97); box-shadow: none; }
-
-        /* 结果列表展示 */
-        .result-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-        .result-table th { 
-            text-align: left; padding: 12px 8px; color: #999; 
-            font-size: 0.8rem; border-bottom: 2px solid var(--grey);
-        }
+        /* 结果展示 */
+        .result-table { width: 100%; border-collapse: collapse; }
+        .result-table th { text-align: left; padding: 12px 8px; color: #999; font-size: 0.8rem; border-bottom: 2px solid var(--grey); }
         .result-table td { padding: 14px 8px; border-bottom: 1px solid #f9f9f9; }
 
-        /* 奖项标签颜色 */
-        .tag {
-            padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
-        }
-        /* 特等奖颜色加深 */
+        .tag { padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
         .tag-1 { background: #721c24; color: #fff; } /* 特等 */
         .tag-2 { background: #fff3cd; color: #856404; } /* 一等 */
         .tag-3 { background: #d1ecf1; color: #0c5460; } /* 二等 */
         .tag-4 { background: #d4edda; color: #155724; } /* 三等 */
         .tag-5 { background: #e2e3e5; color: #383d41; } /* 阳光 */
 
-        .winner-name { font-weight: bold; color: #333; }
-        .prize-name { color: #666; font-size: 0.9rem; }
-
+        .winner-name { font-weight: bold; }
         .hidden { display: none; }
-
         .footer-action { display: flex; gap: 10px; margin-top: 25px; }
         .btn-secondary { background: white; color: var(--red); border: 1.5px solid var(--red); box-shadow: none; }
-
-        /* 水印效果 */
-        .watermark {
-            text-align: center; font-size: 0.7rem; color: #ccc; margin-top: 20px;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>2026 年会奖品分配系统</h2>
+    <h2>2026 年会抽奖系统</h2>
 
     <div id="setup-view">
         <div class="card">
-            <label>👤 全体成员名单</label>
-            <textarea id="all-members" placeholder="请在此粘贴所有员工姓名，每行一个..."></textarea>
-            <p class="hint">系统将自动过滤下方的指定人员，确保每人必中奖。</p>
+            <label>👤 全体成员 (33人)</label>
+            <textarea id="all-members" style="height: 120px;">吕晨曦
+王博
+张志峰
+李智
+邵新乐
+杜舒惠
+刘明鑫
+徐聪
+高启蒙
+陶雪
+洪光硕
+乐欣
+郑正
+张伟光
+陈山
+冯树权
+王莎莎
+沈超
+王延猛
+左强
+陈佳霖
+张晔
+刘宁
+李德
+徐雯雯
+马麟
+朴永强
+薛刚刚
+杨晨
+黄铮
+杨翠宇
+陈杰
+祝训</textarea>
+            
+            <label>🌟 羽毛球比赛特等奖名单 (6人)</label>
+            <textarea id="special-members" style="height: 110px;">刘小男
+杜舒惠
+王延猛
+朴永强
+冯树权
+陈杰</textarea>
+            <p class="hint">系统逻辑：以上 6 人为羽毛球比赛的特等奖选手，不参与剩余奖项随机抽取。</p>
 
-            <label>🌟 指定特等奖名单 (6人)</label>
-            <textarea id="special-members" style="height: 85px;" placeholder="粘贴明天的指定名单..."></textarea>
-            <p class="hint">这 6 人将稳获【特等奖·加湿器】，不参与后续随机分配。</p>
-
-            <button onclick="generateAndSort()">开始自动分配并排序</button>
+            <button onclick="generateAndSort()">一键全自动分配</button>
         </div>
     </div>
 
     <div id="result-view" class="hidden">
         <div class="card">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: var(--red);">🎉 获奖结果公示</h3>
-                <p id="stat-info" style="font-size: 0.8rem; color: #999; margin: 5px 0;"></p>
-            </div>
-            
+            <h3 style="text-align: center; color: var(--red);">🎉 最终获奖公示</h3>
             <table class="result-table">
                 <thead>
                     <tr>
                         <th>获奖者</th>
-                        <th>奖项等级</th>
-                        <th>奖品名称</th>
+                        <th>奖项</th>
+                        <th>奖品</th>
                     </tr>
                 </thead>
-                <tbody id="result-body">
-                    </tbody>
+                <tbody id="result-body"></tbody>
             </table>
         </div>
-
         <div class="footer-action">
-            <button class="btn-secondary" onclick="goBack()">返回修改</button>
-            <button onclick="window.print()">保存/导出结果</button>
+            <button class="btn-secondary" onclick="goBack()">返回调整</button>
+            <button onclick="window.print()">保存/截图结果</button>
         </div>
-        <p class="watermark">© 2026 Annual Meeting Lucky System</p>
     </div>
 </div>
 
 <script>
-    // 奖项及其显示权重 (数值越小排越前)
     const PRIZE_DEFS = {
-        '特等奖': { weight: 1, name: '加湿器', total: 8 },
-        '一等奖': { weight: 2, name: '鼠标', total: 6 },
-        '二等奖': { weight: 3, name: '电子秤', total: 5 },
-        '三等奖': { weight: 4, name: '热水壶', total: 10 },
-        '阳光普照': { weight: 5, name: '哑铃/蒸蛋器', total: 15 } // 8+7
+        '特等奖': { weight: 1 },
+        '一等奖': { weight: 2 },
+        '二等奖': { weight: 3 },
+        '三等奖': { weight: 4 },
+        '阳光普照': { weight: 5 }
     };
 
     function generateAndSort() {
-        const allInput = document.getElementById('all-members').value.trim();
-        const specInput = document.getElementById('special-members').value.trim();
+        const allList = document.getElementById('all-members').value.split('\n').map(n => n.trim()).filter(n => n);
+        const specList = document.getElementById('special-members').value.split('\n').map(n => n.trim()).filter(n => n);
 
-        if (!allInput) return alert('请输入成员名单！');
-        
-        const allList = allInput.split('\n').map(n => n.trim()).filter(n => n);
-        const specList = specInput.split('\n').map(n => n.trim()).filter(n => n);
-
-        if (specList.length !== 6) {
-            return alert('请确保指定特等奖人数为 6 人（当前：' + specList.length + '人）');
-        }
-
-        // 1. 过滤：得出需要随机分配的人
+        // 1. 过滤掉指定人员
         const randomPool = allList.filter(name => !specList.includes(name));
 
-        // 2. 准备：剩余的奖品池（扣除指定的6个特等奖）
+        // 2. 准备剩余奖品池 (特等奖剩下 8-6=2 个)
         let prizeItems = [];
-        
-        // 特等奖剩下 2 个进入随机池
         for(let i=0; i<2; i++) prizeItems.push({ level: '特等奖', name: '加湿器' });
-        // 一等奖 6 个
         for(let i=0; i<6; i++) prizeItems.push({ level: '一等奖', name: '鼠标' });
-        // 二等奖 5 个
         for(let i=0; i<5; i++) prizeItems.push({ level: '二等奖', name: '电子秤' });
-        // 三等奖 10 个
         for(let i=0; i<10; i++) prizeItems.push({ level: '三等奖', name: '热水壶' });
-        // 阳光普照 (8哑铃+7蒸蛋器)
-        for(let i=0; i<8; i++) prizeItems.push({ level: '阳光普照', name: '哑铃' });
-        for(let i=0; i<7; i++) prizeItems.push({ level: '阳光普照', name: '蒸蛋器' });
+        
+        let luckyPrizes = [];
+        for(let i=0; i<8; i++) luckyPrizes.push('哑铃');
+        for(let i=0; i<7; i++) luckyPrizes.push('蒸蛋器');
+        shuffle(luckyPrizes);
+        luckyPrizes.forEach(p => prizeItems.push({ level: '阳光普照', name: p }));
 
-        // 3. 随机：洗牌名单和奖品
+        // 3. 洗牌
         shuffle(randomPool);
         shuffle(prizeItems);
 
         // 4. 分配
-        let finalResults = [];
-
-        // 核心人员直接给奖
-        specList.forEach(name => {
-            finalResults.push({ name, level: '特等奖', prize: '加湿器' });
-        });
-
-        // 普通人员分配剩余奖品
+        let results = [];
+        specList.forEach(name => results.push({ name, level: '特等奖', prize: '加湿器' }));
         randomPool.forEach((name, i) => {
-            if (prizeItems[i]) {
-                finalResults.push({ name, level: prizeItems[i].level, prize: prizeItems[i].name });
-            } else {
-                finalResults.push({ name, level: '阳光普照', prize: '精美礼品' }); // 备选兜底
-            }
+            const p = prizeItems[i] || { level: '阳光普照', name: '惊喜小礼物' };
+            results.push({ name, level: p.level, prize: p.name });
         });
 
-        // 5. 排序：根据权重进行展示排序
-        finalResults.sort((a, b) => {
-            const weightA = PRIZE_DEFS[a.level] ? PRIZE_DEFS[a.level].weight : 99;
-            const weightB = PRIZE_DEFS[b.level] ? PRIZE_DEFS[b.level].weight : 99;
-            return weightA - weightB;
-        });
+        // 5. 排序渲染
+        results.sort((a, b) => PRIZE_DEFS[a.level].weight - PRIZE_DEFS[b.level].weight);
 
-        render(finalResults);
-    }
-
-    function render(results) {
         const tbody = document.getElementById('result-body');
-        const stat = document.getElementById('stat-info');
         tbody.innerHTML = '';
-        stat.innerText = `共计分配人员：${results.length} 名`;
-
         results.forEach(item => {
-            const weight = PRIZE_DEFS[item.level] ? PRIZE_DEFS[item.level].weight : 5;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="winner-name">${item.name}</td>
-                <td><span class="tag tag-${weight}">${item.level}</span></td>
-                <td class="prize-name">${item.prize}</td>
-            `;
-            tbody.appendChild(row);
+            const w = PRIZE_DEFS[item.level].weight;
+            tbody.innerHTML += `<tr><td class="winner-name">${item.name}</td><td><span class="tag tag-${w}">${item.level}</span></td><td style="color:#666;font-size:0.9rem">${item.prize}</td></tr>`;
         });
 
         document.getElementById('setup-view').classList.add('hidden');
         document.getElementById('result-view').classList.remove('hidden');
-        window.scrollTo(0,0);
     }
 
     function shuffle(arr) {
@@ -246,6 +219,5 @@
         document.getElementById('result-view').classList.add('hidden');
     }
 </script>
-
 </body>
 </html>
